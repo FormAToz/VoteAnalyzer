@@ -5,26 +5,22 @@ import org.xml.sax.helpers.DefaultHandler;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-
 public class XMLHandler extends DefaultHandler {
 
-    private static SimpleDateFormat birthDayFormat = new SimpleDateFormat("yyyy.MM.dd");
     private static SimpleDateFormat visitDateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
-    private Voter voter;
+    private static String voterName;
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         try {
-            if (qName.equals("voter") && voter == null) {
-                Date birthDate = birthDayFormat.parse(attributes.getValue("birthDay"));
-                voter = new Voter(attributes.getValue("name"), birthDate);
+            if (qName.equals("voter") && voterName == null) {
+                voterName = attributes.getValue("name");
+                DBConnection.countVoter(voterName, attributes.getValue("birthDay"));
 
-            } else if (qName.equals("visit") && voter != null) {
-                int count = Loader.getVoterCounts().getOrDefault(voter, 0);
-                Loader.addVoter(voter, ++count);
-
+            } else if (qName.equals("visit") && voterName != null) {
                 Integer station = Integer.parseInt(attributes.getValue("station"));
                 Date time = visitDateFormat.parse(attributes.getValue("time"));
+
                 WorkTime workTime = Loader.getVoteStationWorkTimes().get(station);
                 if(workTime == null) {
                     workTime = new WorkTime();
@@ -32,7 +28,6 @@ public class XMLHandler extends DefaultHandler {
                 }
                 workTime.addVisitTime(time.getTime());
             }
-
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -41,7 +36,7 @@ public class XMLHandler extends DefaultHandler {
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         if (qName.equals("voter")) {
-            voter = null;
+            voterName = null;
         }
     }
 }
