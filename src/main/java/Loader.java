@@ -15,7 +15,7 @@ public class Loader
         System.out.println("Initial memory: " + usage);
 
         //SAX parsing
-        String fileName = "res/data-1572M.xml";
+        String fileName = "res/data-1M.xml";
         parseFileBySAX(fileName);
 
         System.out.println("Memory after SAX parsing: " + (getMemoryUsage() - usage));
