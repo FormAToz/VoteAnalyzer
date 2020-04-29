@@ -6,6 +6,7 @@ import java.util.HashMap;
 public class Loader
 {
     private static HashMap<Integer, WorkTime> voteStationWorkTimes = new HashMap<>();
+    private static String query = "INSERT INTO voter_count(name, birthDate) VALUES(?, ?)";
 
     public static void main(String[] args) throws Exception
     {
@@ -15,7 +16,7 @@ public class Loader
         System.out.println("Initial memory: " + usage);
 
         //SAX parsing
-        String fileName = "res/data-1M.xml";
+        String fileName = "res/data-18M.xml";
         parseFileBySAX(fileName);
 
         System.out.println("Memory after SAX parsing: " + (getMemoryUsage() - usage));
@@ -31,7 +32,12 @@ public class Loader
         SAXParser parser = factory.newSAXParser();
         XMLHandler handler = new XMLHandler();
         parser.parse(new File(fileName), handler);
-        DBConnection.executeMultiinsert();
+
+        // Executing by Statemenet
+//        DBConnection.executeMultiinsert();
+
+        // Executing by PreparedStatement
+        DBConnection.executeBatch();
 
         DBConnection.printVoterCounts();
 //        printVoteStationsWorkTime();

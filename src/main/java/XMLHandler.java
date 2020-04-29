@@ -9,13 +9,15 @@ public class XMLHandler extends DefaultHandler {
 
     private static SimpleDateFormat visitDateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
     private static String voterName;
+    private static String birthDay;
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         try {
             if (qName.equals("voter") && voterName == null) {
                 voterName = attributes.getValue("name");
-                DBConnection.countVoter(voterName, attributes.getValue("birthDay"));
+                birthDay = attributes.getValue("birthDay");
+                DBConnection.countVoter(voterName, birthDay);
 
             } else if (qName.equals("visit") && voterName != null) {
                 Integer station = Integer.parseInt(attributes.getValue("station"));
