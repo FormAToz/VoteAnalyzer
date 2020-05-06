@@ -1,6 +1,5 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
@@ -13,6 +12,8 @@ public abstract class DBConnection {
     private static Statement statement;
     private static PreparedStatement prepStatement;
     private static StringBuilder insertQuery = new StringBuilder();
+    private static StringBuilder insertNames = new StringBuilder();
+    private static int counter = 0;
 
     static {
         try {
@@ -24,7 +25,6 @@ public abstract class DBConnection {
                     "name TINYTEXT NOT NULL, " +
                     "birthDate DATE NOT NULL, " +
                     "PRIMARY KEY(id))");
-            prepStatement = connection.prepareStatement("INSERT INTO voter_count(name, birthDate) VALUES(?, ?)");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -32,10 +32,6 @@ public abstract class DBConnection {
 
     public static Statement getStatement() {
         return statement;
-    }
-
-    public static PreparedStatement getPrepStatement() {
-        return prepStatement;
     }
 
     //    // Execiting queries by Statement & multiinsert
@@ -56,25 +52,30 @@ public abstract class DBConnection {
 //    }
 
     // Execiting queries by PrepareStatement
-//    public static void countVoter(String name, String birthDay) throws SQLException {
-//        birthDay = birthDay.replace('.', '-');
-//
-//        getPrepStatement().setString(1, name);
-//        getPrepStatement().setString(2, birthDay);
-//        getPrepStatement().execute();
-//    }
-
-    // Execiting queries by PrepareStatement - Batch
     public static void countVoter(String name, String birthDay) throws SQLException {
         birthDay = birthDay.replace('.', '-');
+        insertQuery.append((insertQuery.length() == 0 ? "" : ",") + "(?, ?)");
+        insertNames.append(name + "," + birthDay + ",");
+        counter++;
 
-        getPrepStatement().setString(1, name);
-        getPrepStatement().setString(2, birthDay);
-        getPrepStatement().addBatch();
+        if (insertQuery.length() > 100_000) {
+            executeMultiinsert();
+            insertQuery = new StringBuilder();
+            counter = 0;
+        }
     }
 
-    public static void executeBatch() throws SQLException {
-        getPrepStatement().executeBatch();
+    public static void executeMultiinsert() throws SQLException {
+        prepStatement = connection.prepareStatement("INSERT INTO voter_count(name, birthDate) VALUES" + insertQuery.toString());
+        String[] strArray = insertNames.toString().split(",");
+
+        int j = 0;
+        int index = 1;
+        for (int i = 0; i < counter; i++) {
+            prepStatement.setString(index++, strArray[j++]);
+            prepStatement.setString(index++, strArray[j++]);
+        }
+        prepStatement.execute();
     }
 
     public static void printVoterCounts() throws SQLException {

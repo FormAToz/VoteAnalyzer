@@ -37,7 +37,7 @@ public class Loader
 //        DBConnection.executeMultiinsert();
 
         // Executing by PreparedStatement
-        DBConnection.executeBatch();
+        DBConnection.executeMultiinsert();
 
         DBConnection.printVoterCounts();
 //        printVoteStationsWorkTime();
