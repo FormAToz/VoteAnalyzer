@@ -1,7 +1,3 @@
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.*;
 
 public abstract class DBConnection {
@@ -11,13 +7,12 @@ public abstract class DBConnection {
     private static Connection connection;
     private static Statement statement;
     private static PreparedStatement prepStatement;
-    private static StringBuilder insertQuery = new StringBuilder();
-    private static StringBuilder insertNames = new StringBuilder();
     private static int counter = 0;
 
     static {
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPass);
+            connection.setAutoCommit(false);
             statement = connection.createStatement();
             statement.execute("DROP TABLE IF EXISTS voter_count");
             statement.execute("CREATE TABLE voter_count(" +
@@ -25,6 +20,7 @@ public abstract class DBConnection {
                     "name TINYTEXT NOT NULL, " +
                     "birthDate DATE NOT NULL, " +
                     "PRIMARY KEY(id))");
+            prepStatement = connection.prepareStatement("INSERT INTO voter_count(name, birthDate) VALUES(?,?)");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -54,28 +50,20 @@ public abstract class DBConnection {
     // Execiting queries by PrepareStatement
     public static void countVoter(String name, String birthDay) throws SQLException {
         birthDay = birthDay.replace('.', '-');
-        insertQuery.append((insertQuery.length() == 0 ? "" : ",") + "(?, ?)");
-        insertNames.append(name + "," + birthDay + ",");
+        prepStatement.setString(1, name);
+        prepStatement.setString(2, birthDay);
+        prepStatement.addBatch();
         counter++;
 
-        if (insertQuery.length() > 100_000) {
-            executeMultiinsert();
-            insertQuery = new StringBuilder();
+        if (counter > 100_000) {
+            prepStatement.executeBatch();
             counter = 0;
         }
     }
 
-    public static void executeMultiinsert() throws SQLException {
-        prepStatement = connection.prepareStatement("INSERT INTO voter_count(name, birthDate) VALUES" + insertQuery.toString());
-        String[] strArray = insertNames.toString().split(",");
-
-        int j = 0;
-        int index = 1;
-        for (int i = 0; i < counter; i++) {
-            prepStatement.setString(index++, strArray[j++]);
-            prepStatement.setString(index++, strArray[j++]);
-        }
-        prepStatement.execute();
+    public static void execute() throws SQLException {
+        prepStatement.executeBatch();
+        connection.commit();
     }
 
     public static void printVoterCounts() throws SQLException {

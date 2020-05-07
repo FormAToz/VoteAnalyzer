@@ -16,7 +16,7 @@ public class Loader
         System.out.println("Initial memory: " + usage);
 
         //SAX parsing
-        String fileName = "res/data-18M.xml";
+        String fileName = "res/data-0.2M.xml";
         parseFileBySAX(fileName);
 
         System.out.println("Memory after SAX parsing: " + (getMemoryUsage() - usage));
@@ -37,7 +37,7 @@ public class Loader
 //        DBConnection.executeMultiinsert();
 
         // Executing by PreparedStatement
-        DBConnection.executeMultiinsert();
+        DBConnection.execute();
 
         DBConnection.printVoterCounts();
 //        printVoteStationsWorkTime();
